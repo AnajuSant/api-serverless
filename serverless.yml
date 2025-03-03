@@ -1,0 +1,82 @@
+service: pedidos-api
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  stage: dev
+  region: us-east-1
+  logs:
+    restApi: true
+    websocket: true
+    httpApi: true
+    tracing:
+    apiGateway: true
+    lambda: true
+  
+
+functions:
+  criarPedido:
+    handler: pedidos-api/src/functions/criarPedido.criarPedido
+    events:
+      - http:
+          path: pedidos 
+          method: post
+          cors: true
+  listarPedidos:
+    handler: pedidos-api/src/functions/listarPedidos.listarPedidos
+    events:
+      - http:
+          path: pedidos
+          method: get
+          cors: true
+  obterDetalhesPedido:
+    handler: pedidos-api/src/functions/obterDetalhesPedido.obterDetalhesPedido
+    events:
+      - http:
+          path: pedidos/{id}
+          method: get
+          cors: true
+  atualizarStatusPedido:
+    handler: pedidos-api/src/functions/atualizarStatusPedido.atualizarStatusPedido
+    events:
+      - http:
+          path: pedidos/{id}/status
+          method: put
+          cors: true
+  deletarPedido:
+    handler: pedidos-api/src/functions/deletarPedido.deletarPedido
+    events:
+      - http:
+          path: pedidos/{id}
+          method: delete
+          cors: true
+
+plugins:
+  - serverless-offline
+
+package:
+  individually: true
+  exclude:
+    - node_modules/**
+    - .git/**
+    - .serverless/**
+    - package-lock.json
+    - README.md
+    - tests/**
+
+
+resources:
+  Resources:
+    PedidosDynamoDB:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Pedidos
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
