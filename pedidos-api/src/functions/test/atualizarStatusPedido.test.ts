@@ -1,15 +1,18 @@
-import { APIGatewayProxyResult, APIGatewayProxyEvent, Context } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { atualizarStatusPedido } from '../atualizarStatusPedido';
-import { DocumentClient } from 'aws-sdk/clients/dynamodb';
+import { DynamoDB } from 'aws-sdk';
 
-// Mock do DynamoDB
+// Definir mockDynamoDb
 const mockDynamoDb = {
   update: jest.fn().mockReturnValue({
-    promise: jest.fn().mockResolvedValueOnce({ Attributes: { id: '123', status: 'CONCLUÍDO' } })
+    promise: jest.fn().mockResolvedValueOnce({
+      Attributes: { id: '123', status: 'CONCLUÍDO', data_atualizacao: '2025-03-03T18:55:31.255Z' },
+    }),
   }),
 };
 
-jest.mock('aws-sdk', () => ({
+// Usar jest.doMock para configurar o mock dinamicamente
+jest.doMock('aws-sdk', () => ({
   DynamoDB: {
     DocumentClient: jest.fn(() => mockDynamoDb),
   },
@@ -81,6 +84,10 @@ describe('atualizarStatusPedido', () => {
     const response = (await atualizarStatusPedido(event, context, callback)) as APIGatewayProxyResult;
 
     expect(response.statusCode).toBe(200);
-    expect(JSON.parse(response.body).status).toBe('CONCLUÍDO');
-  });
+    expect(JSON.parse(response.body)).toEqual({
+      id: '123',
+      status: 'CONCLUÍDO',
+      data_atualizacao: '2025-03-03T18:55:31.255Z',
+    });
+  }, 10000); // 10 segundos de timeout
 });
